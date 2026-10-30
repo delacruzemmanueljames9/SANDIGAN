@@ -38,15 +38,78 @@ export async function middleware(request: NextRequest) {
   });
 
   const { data: { user } } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
 
-  // Server-side route protection for authenticated user areas
-  const isProtectedPath = request.nextUrl.pathname.startsWith("/settings") || request.nextUrl.pathname.startsWith("/hq");
+  const isHqApiRoute = pathname.startsWith("/api/hq");
+  const isHqPageRoute = pathname === "/hq" || pathname.startsWith("/hq/");
+  const isSettingsRoute = pathname.startsWith("/settings");
 
-  if (isProtectedPath && !user) {
+  // 1. Settings Routes: Require authentication
+  if (isSettingsRoute && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/auth/login";
-    redirectUrl.searchParams.set("redirect", request.nextUrl.pathname);
+    redirectUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // 2. HQ API Endpoints: Require server-side founder/admin authorization (Fail closed)
+  if (isHqApiRoute) {
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+      const { data: roleRecord, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .in("role", ["founder", "admin"])
+        .maybeSingle();
+
+      if (roleError || !roleRecord) {
+        return NextResponse.json(
+          { error: "Forbidden: Founder or Administrator access required." },
+          { status: 403 }
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: "Forbidden: Authorization verification failed." },
+        { status: 403 }
+      );
+    }
+  }
+
+  // 3. HQ Page Routes: Require server-side founder/admin authorization (Fail closed)
+  if (isHqPageRoute) {
+    if (!user) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/auth/login";
+      redirectUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    try {
+      const { data: roleRecord, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .in("role", ["founder", "admin"])
+        .maybeSingle();
+
+      if (roleError || !roleRecord) {
+        // Fail closed: Redirect unauthorized user away from HQ
+        const deniedUrl = request.nextUrl.clone();
+        deniedUrl.pathname = "/";
+        deniedUrl.searchParams.set("error", "unauthorized_hq_access");
+        return NextResponse.redirect(deniedUrl);
+      }
+    } catch {
+      // Fail closed on error
+      const deniedUrl = request.nextUrl.clone();
+      deniedUrl.pathname = "/";
+      return NextResponse.redirect(deniedUrl);
+    }
   }
 
   return response;
@@ -56,5 +119,7 @@ export const config = {
   matcher: [
     "/settings/:path*",
     "/hq/:path*",
+    "/hq",
+    "/api/hq/:path*",
   ],
 };

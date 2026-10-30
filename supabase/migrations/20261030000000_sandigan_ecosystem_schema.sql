@@ -386,7 +386,7 @@ BEGIN
       AND role IN ('founder', 'admin')
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Helper function to check if current user is moderator
 CREATE OR REPLACE FUNCTION public.is_moderator()
@@ -398,7 +398,7 @@ BEGIN
       AND role IN ('founder', 'admin', 'moderator')
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 -- Profiles Policies
 DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
