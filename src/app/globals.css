@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-manrope: 'Manrope', system-ui, -apple-system, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-sandigan-surface-light text-sandigan-text-primaryLight transition-colors duration-200;
+  }
+
+  .dark body {
+    @apply bg-sandigan-navy-950 text-sandigan-text-primaryDark;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    @apply outline-none ring-2 ring-sandigan-teal ring-offset-2 ring-offset-white dark:ring-offset-sandigan-navy-950;
+  }
+}

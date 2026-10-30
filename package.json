@@ -14,6 +14,7 @@
     "test": "npx tsx scripts/run-system-tests.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.32.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
     "clsx": "^2.1.1",
@@ -21,6 +22,7 @@
     "next": "^14.2.24",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hook-form": "^7.91.0",
     "tailwind-merge": "^2.6.0",
     "zod": "^3.24.2"
   },
