@@ -20,14 +20,35 @@ import {
 } from "lucide-react";
 import supportData from "../../../.data/support_directory.json";
 import { SupportProvider } from "@/types";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function FindSupportPage() {
   const [search, setSearch] = React.useState("");
   const [selectedRegion, setSelectedRegion] = React.useState<string>("all");
   const [only247, setOnly247] = React.useState(false);
   const [onlyFree, setOnlyFree] = React.useState(false);
+  const [providers, setProviders] = React.useState<SupportProvider[]>(
+    supportData as SupportProvider[]
+  );
 
-  const providers = supportData as SupportProvider[];
+  React.useEffect(() => {
+    async function loadDirectory() {
+      try {
+        const supabase = getSupabaseBrowserClient();
+        const { data, error } = await supabase
+          .from("support_directory")
+          .select("*")
+          .order("name", { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          setProviders(data as unknown as SupportProvider[]);
+        }
+      } catch {
+        // Fallback to static bundled supportData remains active
+      }
+    }
+    loadDirectory();
+  }, []);
 
   const regions = ["all", "National", "NCR", "Luzon", "Visayas", "Mindanao"];
 

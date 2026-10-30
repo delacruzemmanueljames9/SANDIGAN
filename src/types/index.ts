@@ -202,3 +202,81 @@ export interface AuditLog {
   metadata?: Record<string, unknown>;
   created_at: string;
 }
+
+export interface ScheduledJob {
+  id: string;
+  name: string;
+  cron_expression: string;
+  handler: string;
+  last_run_at?: string | null;
+  next_run_at?: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface SystemEvent {
+  id: string;
+  event_type: string;
+  event_level: "info" | "warn" | "error" | "critical";
+  source: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface StrategicReportData {
+  platformUsage: {
+    totalProfiles: number;
+    totalCommunityPosts: number;
+    totalCommunityComments: number;
+    totalWellnessAssessments: number;
+    totalSafetyPlans: number;
+    totalJournalEntries: number;
+    totalReferralRequests: number;
+    totalSupportProviders: number;
+  };
+  moderation: {
+    pending: number;
+    approved: number;
+    flagged: number;
+    rejected: number;
+    total: number;
+  };
+  referrals: {
+    submitted: number;
+    reviewed_by_safeguarding: number;
+    routed_to_partner: number;
+    partner_accepted: number;
+    closed: number;
+    total: number;
+  };
+  safeguarding: {
+    totalIncidents: number;
+    byRiskLevel: {
+      low: number;
+      medium: number;
+      high: number;
+      critical: number;
+    };
+    unacknowledgedCount: number;
+    pathways: {
+      emergency_hotline: number;
+      founder_alert: number;
+      modal: number;
+      banner: number;
+    };
+  };
+  officerPerformance: Array<{
+    officer_id: string;
+    totalTasks: number;
+    successfulAttempts: number;
+    failedAttempts: number;
+    avgDurationMs: number;
+  }>;
+  jobsSummary: {
+    totalJobs: number;
+    activeJobs: number;
+    pausedJobs: number;
+  };
+  generatedAt: string;
+}

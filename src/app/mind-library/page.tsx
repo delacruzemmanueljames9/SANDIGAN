@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   Bookmark,
+  Send,
+  Loader2,
 } from "lucide-react";
 
 interface LibraryArticle {
@@ -33,6 +35,38 @@ interface LibraryArticle {
 export default function MindLibraryPage() {
   const [search, setSearch] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<string>("all");
+
+  // Ask DUNONG interactive inquiry state
+  const [dunongQuery, setDunongQuery] = React.useState("");
+  const [dunongAnswer, setDunongAnswer] = React.useState<string | null>(null);
+  const [dunongSources, setDunongSources] = React.useState<string[]>([]);
+  const [dunongLoading, setDunongLoading] = React.useState(false);
+
+  const handleAskDunong = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!dunongQuery.trim() || dunongLoading) return;
+    setDunongLoading(true);
+    setDunongAnswer(null);
+
+    try {
+      const res = await fetch("/api/officers/dunong", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: dunongQuery.trim() }),
+      });
+      const json = await res.json();
+      if (json.data?.answer) {
+        setDunongAnswer(json.data.answer);
+        setDunongSources(json.data.institutionalSources || []);
+      }
+    } catch {
+      setDunongAnswer(
+        "According to the World Health Organization (WHO), mental health is an integral component of health and well-being. For personalized support, please connect with a verified healthcare professional."
+      );
+    } finally {
+      setDunongLoading(false);
+    }
+  };
 
   const articles: LibraryArticle[] = [
     {
@@ -184,6 +218,63 @@ export default function MindLibraryPage() {
           ))}
         </div>
       </div>
+
+      {/* Ask DUNONG Interactive Psychoeducation Box */}
+      <Card className="border-sandigan-emerald/40 bg-gradient-to-br from-sandigan-emerald/5 via-white to-sandigan-teal/5 dark:from-sandigan-emerald/10 dark:via-sandigan-surface-cardDark dark:to-sandigan-teal/10 shadow-sm p-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Badge variant="emerald">DUNONG · CURATOR-05</Badge>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Evidence-Informed Research Inquiries
+            </span>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-sandigan-navy dark:text-white">
+              Ask DUNONG a Mental Health Science Question
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+              Get an evidence-informed summary grounded in authentic citations from WHO, APA, and DOH Philippines. No diagnoses or fabricated citations.
+            </p>
+          </div>
+
+          <form onSubmit={handleAskDunong} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="e.g. What does polyvagal theory explain about anxiety? How does sleep debt affect mood?"
+              value={dunongQuery}
+              onChange={(e) => setDunongQuery(e.target.value)}
+              className="flex-1 px-4 py-2 text-sm rounded-xl border border-slate-300 dark:border-sandigan-border-dark bg-white dark:bg-sandigan-surface-dark focus:outline-none focus:ring-2 focus:ring-sandigan-emerald"
+            />
+            <Button
+              type="submit"
+              disabled={dunongLoading || !dunongQuery.trim()}
+              variant="emerald"
+              size="sm"
+              leftIcon={dunongLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            >
+              {dunongLoading ? "Searching…" : "Ask"}
+            </Button>
+          </form>
+
+          {dunongAnswer && (
+            <div className="rounded-xl border border-sandigan-emerald/30 bg-white/80 dark:bg-sandigan-navy-900/60 p-4 space-y-3">
+              <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                {dunongAnswer}
+              </p>
+              {dunongSources.length > 0 && (
+                <div className="pt-2 border-t border-slate-200 dark:border-sandigan-border-dark flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span className="font-semibold text-sandigan-emerald">Verified Institutional Sources:</span>
+                  {dunongSources.map((s, idx) => (
+                    <span key={idx} className="bg-sandigan-emerald/10 text-sandigan-emerald px-2 py-0.5 rounded-full text-[11px]">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
 
       {/* Articles List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

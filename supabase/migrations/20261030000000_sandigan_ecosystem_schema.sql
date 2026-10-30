@@ -424,12 +424,13 @@ CREATE POLICY "user_consents_select_own" ON public.user_consents FOR SELECT USIN
 DROP POLICY IF EXISTS "user_consents_insert_own" ON public.user_consents;
 CREATE POLICY "user_consents_insert_own" ON public.user_consents FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Wellness Assessments Policies (Strictly private to the user)
+-- Wellness Assessments Policies (Strictly private to the user — authentication required)
 DROP POLICY IF EXISTS "wellness_assessments_select_own" ON public.wellness_assessments;
 CREATE POLICY "wellness_assessments_select_own" ON public.wellness_assessments FOR SELECT USING (auth.uid() = user_id OR public.is_founder_or_admin());
 
 DROP POLICY IF EXISTS "wellness_assessments_insert_own" ON public.wellness_assessments;
-CREATE POLICY "wellness_assessments_insert_own" ON public.wellness_assessments FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+-- NULL user_id exception removed: assessments are owner-private and require authentication.
+CREATE POLICY "wellness_assessments_insert_own" ON public.wellness_assessments FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND auth.uid() = user_id);
 
 -- Safety Plans Policies (Strictly private to the user)
 DROP POLICY IF EXISTS "safety_plans_all_own" ON public.safety_plans;
@@ -444,10 +445,26 @@ DROP POLICY IF EXISTS "community_posts_select" ON public.community_posts;
 CREATE POLICY "community_posts_select" ON public.community_posts FOR SELECT USING (moderation_status = 'approved' OR auth.uid() = author_id OR public.is_moderator());
 
 DROP POLICY IF EXISTS "community_posts_insert" ON public.community_posts;
-CREATE POLICY "community_posts_insert" ON public.community_posts FOR INSERT WITH CHECK (auth.uid() = author_id OR is_anonymous = TRUE);
+-- "is_anonymous" controls public display only. Authenticated authorship is always required.
+-- auth.uid() = author_id ensures the post is linked to the real user for moderation/safeguarding.
+-- is_anonymous = TRUE/FALSE is unrestricted — both values are permitted for authenticated users.
+CREATE POLICY "community_posts_insert" ON public.community_posts FOR INSERT WITH CHECK (
+    auth.uid() IS NOT NULL
+    AND auth.uid() = author_id
+);
+
+-- Row-level: authors can only update their own posts; moderators can update any post.
+-- Column-level: the trigger trg_prevent_author_moderation_update (section 11) enforces
+-- that non-moderators cannot change moderation_status, moderation_flag_reason,
+-- moderated_by_officer, likes_count, or comments_count regardless of what they submit.
+DROP POLICY IF EXISTS "community_posts_author_update" ON public.community_posts;
+CREATE POLICY "community_posts_author_update" ON public.community_posts FOR UPDATE
+    USING (auth.uid() = author_id AND NOT public.is_moderator())
+    WITH CHECK (auth.uid() = author_id);
 
 DROP POLICY IF EXISTS "community_posts_modify_mod" ON public.community_posts;
-CREATE POLICY "community_posts_modify_mod" ON public.community_posts FOR UPDATE USING (public.is_moderator() OR auth.uid() = author_id);
+-- Moderators have full update access including moderation fields and counters.
+CREATE POLICY "community_posts_modify_mod" ON public.community_posts FOR UPDATE USING (public.is_moderator());
 
 -- Community Comments Policies
 DROP POLICY IF EXISTS "community_comments_select" ON public.community_comments;
@@ -468,7 +485,12 @@ DROP POLICY IF EXISTS "referral_requests_user" ON public.referral_requests;
 CREATE POLICY "referral_requests_user" ON public.referral_requests FOR SELECT USING (auth.uid() = user_id OR public.is_founder_or_admin());
 
 DROP POLICY IF EXISTS "referral_requests_insert" ON public.referral_requests;
-CREATE POLICY "referral_requests_insert" ON public.referral_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- consent_to_share_granted = TRUE is required at insert time; no consent = no referral.
+CREATE POLICY "referral_requests_insert" ON public.referral_requests FOR INSERT WITH CHECK (
+    auth.uid() IS NOT NULL
+    AND auth.uid() = user_id
+    AND consent_to_share_granted = TRUE
+);
 
 -- AI Officers, Tasks & System Infrastructure (Founder/Admin or Service Role ONLY)
 DROP POLICY IF EXISTS "ai_officers_read" ON public.ai_officers;
@@ -511,7 +533,11 @@ BEGIN
     INSERT INTO public.profiles (id, display_name, preferred_language, preferred_tone)
     VALUES (
         NEW.id,
-        COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1)),
+        COALESCE(
+            NULLIF(TRIM(NEW.raw_user_meta_data->>'display_name'), ''),
+            NULLIF(TRIM(split_part(COALESCE(NEW.email, ''), '@', 1)), ''),
+            'User'  -- safe fallback for OAuth/magic-link users with no email or display_name
+        ),
         'en',
         'gentle'
     )
@@ -523,12 +549,46 @@ BEGIN
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Column-level protection: prevent authors from modifying moderation or engagement fields.
+-- RLS is row-level only and cannot restrict individual columns.
+-- This trigger fires BEFORE UPDATE on community_posts and raises an exception if a
+-- non-moderator attempts to change any of the five protected columns.
+CREATE OR REPLACE FUNCTION public.prevent_author_moderation_field_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Skip restriction for moderators, admins, and founders — they have full column access.
+    IF public.is_moderator() THEN
+        RETURN NEW;
+    END IF;
+
+    -- For all other authenticated users (authors), reject changes to protected columns.
+    IF (
+        NEW.moderation_status      IS DISTINCT FROM OLD.moderation_status      OR
+        NEW.moderation_flag_reason IS DISTINCT FROM OLD.moderation_flag_reason OR
+        NEW.moderated_by_officer   IS DISTINCT FROM OLD.moderated_by_officer   OR
+        NEW.likes_count            IS DISTINCT FROM OLD.likes_count            OR
+        NEW.comments_count         IS DISTINCT FROM OLD.comments_count
+    ) THEN
+        RAISE EXCEPTION
+            'permission denied: only moderators may modify moderation_status, '
+            'moderation_flag_reason, moderated_by_officer, likes_count, or comments_count';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+
+DROP TRIGGER IF EXISTS trg_prevent_author_moderation_update ON public.community_posts;
+CREATE TRIGGER trg_prevent_author_moderation_update
+    BEFORE UPDATE ON public.community_posts
+    FOR EACH ROW EXECUTE FUNCTION public.prevent_author_moderation_field_update();
 
 -- =====================================================================
 -- 12. SEED SEVEN AI OFFICERS & VERIFIED SUPPORT DIRECTORY
@@ -550,16 +610,20 @@ ON CONFLICT (id) DO UPDATE SET
     strict_boundaries = EXCLUDED.strict_boundaries,
     status = EXCLUDED.status;
 
--- Seed Verified Support Providers
+-- Seed Support Providers
+-- verification_status is set to 'pending_review' until authoritative documentary verification
+-- is completed by the KAWING officer or a designated safeguarding reviewer.
+-- last_verified_at is NULL because no formal verification has been recorded yet.
 INSERT INTO public.support_directory (id, name, organization_type, description, services_offered, contact_phone, contact_email, website_url, physical_address, region, is_24_7, is_free_service, verification_status, last_verified_at)
 VALUES
-('prov-ncmh-1553', 'National Center for Mental Health (NCMH) Crisis Hotline', 'government', 'Official 24/7 crisis intervention service in the Philippines providing psychiatric emergency support, suicide prevention, and mental health assistance.', ARRAY['24/7 Crisis Hotline', 'Psychiatric Emergency', 'Counseling Referral'], '1553 / 0917-899-8727 / 0966-351-4518', 'ncmhcrisishotline@gmail.com', 'https://ncmh.gov.ph', '9 de Pebrero St, Mandaluyong City, Metro Manila', 'National', TRUE, TRUE, 'verified', NOW()),
-('prov-in-touch', 'In Touch Community Services', 'ngo', 'Volunteer counseling service providing 24/7 mental health crisis lines, emotional support, and subsidized professional therapy in the Philippines.', ARRAY['Crisis Line', 'Youth Counseling', 'Individual Therapy', 'Grief Support'], '02-8893-7603 / 0917-800-1123', 'crisisline@in-touch.org', 'https://in-touch.org', '48 McKinley Rd, Forbes Park, Makati City', 'National', TRUE, TRUE, 'verified', NOW()),
-('prov-hopeline-ph', 'Hopeline Philippines', 'ngo', '24/7 suicide prevention and crisis support service operated in partnership with mental health advocates across the Philippines.', ARRAY['Suicide Prevention', 'Emotional Support', 'Youth Telecounseling'], '2919 / 02-8804-4673 / 0917-558-4673', 'hopeline@ngf-mindstrong.org', 'https://facebook.com/HopelinePH', 'Metro Manila', 'National', TRUE, TRUE, 'verified', NOW()),
-('prov-pgh-psych', 'Philippine General Hospital (PGH) Department of Psychiatry', 'hospital', 'Free and subsidized public psychiatric consultations, diagnostic evaluations, and outpatient psychological therapy.', ARRAY['Psychiatric Consultation', 'Free Public Care', 'Outpatient Services'], '02-8554-8400 loc 2436', 'pghpsychiatry@up.edu.ph', 'https://pgh.gov.ph', 'Taft Avenue, Ermita, Manila', 'NCR', FALSE, TRUE, 'verified', NOW()),
-('prov-bantay-bata', 'Bantay Bata 163', 'ngo', 'Dedicated youth protection helpline offering crisis response, psycho-social interventions, and youth counseling.', ARRAY['Child Protection', 'Youth Crisis Support', 'Family Counseling'], '163 / 0917-814-4163', 'bantaybata163@abs-cbnfoundation.com', 'https://abscbnfoundation.org', 'Quezon City, Metro Manila', 'National', TRUE, TRUE, 'verified', NOW())
+('prov-ncmh-1553', 'National Center for Mental Health (NCMH) Crisis Hotline', 'government', 'Official 24/7 crisis intervention service in the Philippines providing psychiatric emergency support, suicide prevention, and mental health assistance.', ARRAY['24/7 Crisis Hotline', 'Psychiatric Emergency', 'Counseling Referral'], '1553 / 0917-899-8727 / 0966-351-4518', 'ncmhcrisishotline@gmail.com', 'https://ncmh.gov.ph', '9 de Pebrero St, Mandaluyong City, Metro Manila', 'National', TRUE, TRUE, 'pending_review', NULL),
+('prov-in-touch', 'In Touch Community Services', 'ngo', 'Volunteer counseling service providing 24/7 mental health crisis lines, emotional support, and subsidized professional therapy in the Philippines.', ARRAY['Crisis Line', 'Youth Counseling', 'Individual Therapy', 'Grief Support'], '02-8893-7603 / 0917-800-1123', 'crisisline@in-touch.org', 'https://in-touch.org', '48 McKinley Rd, Forbes Park, Makati City', 'National', TRUE, TRUE, 'pending_review', NULL),
+('prov-hopeline-ph', 'Hopeline Philippines', 'ngo', '24/7 suicide prevention and crisis support service operated in partnership with mental health advocates across the Philippines.', ARRAY['Suicide Prevention', 'Emotional Support', 'Youth Telecounseling'], '2919 / 02-8804-4673 / 0917-558-4673', 'hopeline@ngf-mindstrong.org', 'https://facebook.com/HopelinePH', 'Metro Manila', 'National', TRUE, TRUE, 'pending_review', NULL),
+('prov-pgh-psych', 'Philippine General Hospital (PGH) Department of Psychiatry', 'hospital', 'Free and subsidized public psychiatric consultations, diagnostic evaluations, and outpatient psychological therapy.', ARRAY['Psychiatric Consultation', 'Free Public Care', 'Outpatient Services'], '02-8554-8400 loc 2436', 'pghpsychiatry@up.edu.ph', 'https://pgh.gov.ph', 'Taft Avenue, Ermita, Manila', 'NCR', FALSE, TRUE, 'pending_review', NULL),
+('prov-bantay-bata', 'Bantay Bata 163', 'ngo', 'Dedicated youth protection helpline offering crisis response, psycho-social interventions, and youth counseling.', ARRAY['Child Protection', 'Youth Crisis Support', 'Family Counseling'], '163 / 0917-814-4163', 'bantaybata163@abs-cbnfoundation.com', 'https://abscbnfoundation.org', 'Quezon City, Metro Manila', 'National', TRUE, TRUE, 'pending_review', NULL)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     contact_phone = EXCLUDED.contact_phone,
-    last_verified_at = EXCLUDED.last_verified_at;
+    -- Do not overwrite last_verified_at on re-run; retain existing verification timestamp.
+    last_verified_at = COALESCE(public.support_directory.last_verified_at, EXCLUDED.last_verified_at);
