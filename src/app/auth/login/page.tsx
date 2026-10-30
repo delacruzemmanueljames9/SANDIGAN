@@ -2,18 +2,43 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { SandiganLogo } from "@/components/sandigan/SandiganLogo";
-import { LogIn, ArrowRight, ShieldCheck, AlertCircle } from "lucide-react";
+import { LogIn, ShieldCheck, AlertCircle } from "lucide-react";
 
-export default function LoginPage() {
+/**
+ * Validates and sanitizes the redirect URL to prevent open-redirect vulnerabilities.
+ * Only allows relative internal application routes.
+ */
+function getSafeRedirect(redirectParam: string | null): string {
+  if (!redirectParam) return "/services";
+  const trimmed = redirectParam.trim();
+  if (
+    trimmed.startsWith("/") &&
+    !trimmed.startsWith("//") &&
+    !trimmed.includes(":") &&
+    !trimmed.includes("\\")
+  ) {
+    return trimmed;
+  }
+  return "/services";
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn, user, isLoading } = useAuth();
 
   const [email, setEmail] = React.useState("");
@@ -21,30 +46,44 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // If already logged in, redirect
+  // Read redirect target and potential error from URL
+  const redirectTarget = React.useMemo(
+    () => getSafeRedirect(searchParams.get("redirect")),
+    [searchParams]
+  );
+  const urlError = searchParams.get("error");
+
+  // If already logged in, redirect to destination
   React.useEffect(() => {
     if (!isLoading && user) {
-      router.push("/");
+      router.push(redirectTarget);
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, redirectTarget]);
+
+  // Display URL-provided errors (e.g., from auth callback)
+  React.useEffect(() => {
+    if (urlError) {
+      setErrorMsg(decodeURIComponent(urlError));
+    }
+  }, [urlError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       setErrorMsg("Please enter both your email and password.");
       return;
     }
 
     setIsSubmitting(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(email.trim(), password);
     setIsSubmitting(false);
 
     if (error) {
       setErrorMsg(error);
     } else {
-      router.push("/");
+      router.push(redirectTarget);
     }
   };
 
@@ -59,13 +98,17 @@ export default function LoginPage() {
             Welcome Back to SANDIGAN
           </CardTitle>
           <CardDescription className="text-xs">
-            Sign in to access your private Inner Garden, personal Safety Plan, and wellness journey.
+            Sign in to access your private Inner Garden, personal Safety Plan,
+            and wellness journey.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
           {errorMsg && (
-            <Alert variant="danger" icon={<AlertCircle className="w-4 h-4 text-rose-500" />}>
+            <Alert
+              variant="danger"
+              icon={<AlertCircle className="w-4 h-4 text-rose-500" />}
+            >
               <p className="text-xs">{errorMsg}</p>
             </Alert>
           )}
@@ -120,7 +163,10 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col space-y-3 pt-4 border-t border-slate-100 dark:border-sandigan-navy-800 text-center text-xs">
           <p className="text-slate-500">
             Don&apos;t have an account yet?{" "}
-            <Link href="/auth/register" className="font-semibold text-sandigan-teal hover:underline">
+            <Link
+              href="/auth/register"
+              className="font-semibold text-sandigan-teal hover:underline"
+            >
               Create an account
             </Link>
           </p>
@@ -131,5 +177,19 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex min-h-[80vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-sandigan-teal border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </React.Suspense>
   );
 }
