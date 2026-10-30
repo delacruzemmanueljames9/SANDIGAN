@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. CUSTOM TYPES
 DO $$ BEGIN
-    CREATE TYPE user_role_type AS ENUM ('guest', 'member', 'moderator', 'counselor', 'founder', 'admin');
+    CREATE TYPE user_role_type AS ENUM ('user', 'volunteer', 'moderator', 'counselor', 'founder', 'admin');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 CREATE TABLE IF NOT EXISTS public.user_roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    role user_role_type NOT NULL DEFAULT 'member',
+    role user_role_type NOT NULL DEFAULT 'user',
     granted_by TEXT DEFAULT 'system_registration',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, role)
@@ -454,7 +454,7 @@ DROP POLICY IF EXISTS "community_comments_select" ON public.community_comments;
 CREATE POLICY "community_comments_select" ON public.community_comments FOR SELECT USING (moderation_status = 'approved' OR auth.uid() = author_id OR public.is_moderator());
 
 DROP POLICY IF EXISTS "community_comments_insert" ON public.community_comments;
-CREATE POLICY "community_comments_insert" ON public.community_comments FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "community_comments_insert" ON public.community_comments FOR INSERT WITH CHECK (auth.uid() = author_id);
 
 -- Support Directory Policies (Publicly readable)
 DROP POLICY IF EXISTS "support_directory_public_read" ON public.support_directory;
@@ -518,7 +518,7 @@ BEGIN
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO public.user_roles (user_id, role, granted_by)
-    VALUES (NEW.id, 'member', 'system_registration')
+    VALUES (NEW.id, 'user', 'system_registration')
     ON CONFLICT (user_id, role) DO NOTHING;
 
     RETURN NEW;

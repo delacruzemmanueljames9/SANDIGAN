@@ -65,10 +65,10 @@ export default function ProfileSettingsPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center text-xs text-slate-500">
-        Loading profile...
+        {isLoading ? "Loading profile..." : "Redirecting to sign in..."}
       </div>
     );
   }
@@ -154,7 +154,7 @@ export default function ProfileSettingsPage() {
                 </p>
               </div>
               <Badge variant="navy" className="uppercase font-mono text-xs">
-                {role || "user"}
+                {role || "Unassigned"}
               </Badge>
             </div>
           </div>

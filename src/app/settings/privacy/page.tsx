@@ -73,8 +73,8 @@ export default function PrivacySettingsPage() {
     }
   };
 
-  if (isLoading) {
-    return <div className="max-w-2xl mx-auto px-4 py-20 text-center text-xs text-slate-500">Loading privacy settings...</div>;
+  if (isLoading || !user) {
+    return <div className="max-w-2xl mx-auto px-4 py-20 text-center text-xs text-slate-500">{isLoading ? "Loading privacy settings..." : "Redirecting to sign in..."}</div>;
   }
 
   return (

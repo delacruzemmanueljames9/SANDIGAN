@@ -162,7 +162,7 @@ export function Header() {
                       <User className="w-4 h-4 text-sandigan-teal" />
                       <span>{profile?.display_name || user.email}</span>
                     </span>
-                    <Badge variant="navy" className="text-[10px] uppercase">{role || "user"}</Badge>
+                    {role && <Badge variant="navy" className="text-[10px] uppercase">{role}</Badge>}
                   </Link>
                   <button
                     onClick={() => signOut()}
