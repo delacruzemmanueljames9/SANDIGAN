@@ -120,6 +120,7 @@ export const config = {
     "/settings/:path*",
     "/hq/:path*",
     "/hq",
+    "/api/hq",
     "/api/hq/:path*",
   ],
 };
