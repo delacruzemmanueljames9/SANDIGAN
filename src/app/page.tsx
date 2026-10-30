@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import Link from "next/link";
 import { SITE_CONFIG } from "@/config/site";
@@ -20,9 +22,75 @@ import {
   Lock,
   Eye,
   CheckCircle2,
+  Users,
+  Compass,
+  Activity,
+  Globe,
 } from "lucide-react";
 
 export default function HomePage() {
+  const [lang, setLang] = React.useState<"en" | "tl">("en");
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem("sandigan-lang") as "en" | "tl" | null;
+    if (saved) setLang(saved);
+
+    const handleLangChange = (e: Event) => {
+      const customEvent = e as CustomEvent<"en" | "tl">;
+      if (customEvent.detail) setLang(customEvent.detail);
+    };
+
+    window.addEventListener("sandigan-lang-change", handleLangChange);
+    return () => window.removeEventListener("sandigan-lang-change", handleLangChange);
+  }, []);
+
+  const content = {
+    en: {
+      badge: "Independent, Youth-Centered Digital Mental Health Ecosystem",
+      tagline: "“You don't have to carry it alone.”",
+      subtagline: "Hindi mo kailangang dalhin ito nang mag-isa.",
+      description:
+        "PROJECT SANDIGAN bridges technology, psychoeducation, and human-centered safeguarding to create a compassionate digital sanctuary for every Filipino youth.",
+      exploreServices: "Explore 14 Core Services",
+      urgentHelp: "Get Urgent Help (24/7)",
+      lifelineLabel: "Immediate Crisis Lifeline (NCMH)",
+      lifelineDesc: "Free, confidential, and toll-free nationwide.",
+      corePrinciplesBadge: "Core Architecture",
+      corePrinciplesTitle: "Grounded in Safety and Compassion",
+      corePrinciplesSubtitle: "SANDIGAN is built on strict ethical principles to protect your emotional well-being and privacy.",
+      pathwaysBadge: "Integrated Support Ecosystem",
+      pathwaysTitle: "Essential Pathways to Support",
+      pathwaysSubtitle: "Each service is thoughtfully engineered for privacy, genuine utility, and accessibility.",
+      viewAll: "View All 14 Services",
+      ethicalTitle: "Our Ethical Commitment to You",
+      ethicalDesc:
+        "PROJECT SANDIGAN is an educational and supportive platform. It does not replace licensed medical practitioners, psychiatrists, or clinical psychologists. Our AI officers (AMARA, TALA, GABAY, SIKLAB, DUNONG, KAWING, SINAG) strictly adhere to non-diagnostic boundaries. If you require medical evaluation, we facilitate verified pathways to accredited Philippine clinics and professionals.",
+    },
+    tl: {
+      badge: "Malaya at Para sa Kabataan na Digital Mental Health Ecosystem",
+      tagline: "“Hindi mo kailangang dalhin ito nang mag-isa.”",
+      subtagline: "May mga taong handang makinig at umalalay sa bawat hakbang.",
+      description:
+        "Pinag-uugnay ng PROJECT SANDIGAN ang teknolohiya, edukasyon sa kalusugang pangkaisipan, at tunay na malasakit upang lumikha ng ligtas at mapagkalingang kanlungan para sa bawat kabataang Pilipino.",
+      exploreServices: "Tingnan ang 14 Serbisyo",
+      urgentHelp: "Humingi ng Saklolo (24/7)",
+      lifelineLabel: "Pambansang Hotline sa Krisis (NCMH)",
+      lifelineDesc: "Libre, lihim, at walang bayad tawagan saanman sa bansa.",
+      corePrinciplesBadge: "Saligang Arkitektura",
+      corePrinciplesTitle: "Nakatindig sa Kaligtasan at Malasakit",
+      corePrinciplesSubtitle: "Itinayo ang SANDIGAN sa mahigpit na prinsipyong etikal upang pangalagaan ang iyong kapakanan at pribasiya.",
+      pathwaysBadge: "Ecosystem ng Suporta",
+      pathwaysTitle: "Mga Daan Tungo sa Kalinga",
+      pathwaysSubtitle: "Bawat serbisyo ay maingat na binuo para sa pribasiya, tunay na kapakinabangan, at madaling pag-access.",
+      viewAll: "Tingnan ang Lahat ng 14 Serbisyo",
+      ethicalTitle: "Ang Aming Etikal na Pangako sa Iyo",
+      ethicalDesc:
+        "Ang PROJECT SANDIGAN ay isang platapormang pang-edukasyon at pangkalinga. Hindi nito pinapalitan ang mga lisensyadong doktor, psychiatrist, o psychologist. Ang aming AI officers ay sumusunod sa mahigpit na patakarang hindi magbigay ng medikal na diagnosis. Kung kailangan mo ng propesyonal na gamutan, inihahatid ka namin sa mga beripikadong klinika at espesyalista sa Pilipinas.",
+    },
+  };
+
+  const t = content[lang];
+
   const corePrinciples = [
     { title: "Compassion Before Automation", desc: "Technology should uplift human dignity, never replace genuine empathy.", icon: Heart },
     { title: "Privacy By Design", desc: "Private reflections and personal journal notes remain strictly yours by default.", icon: Lock },
@@ -91,18 +159,18 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 bg-sandigan-navy-50 text-sandigan-navy-800 dark:bg-sandigan-navy-800/80 dark:text-sandigan-gold border border-sandigan-navy-100 dark:border-sandigan-navy-700 text-xs sm:text-sm font-medium shadow-soft-sm">
             <Sparkles className="w-4 h-4 text-sandigan-gold" />
-            <span>Independent, Youth-Centered Digital Mental Health Ecosystem</span>
+            <span>{t.badge}</span>
           </div>
 
           <div className="space-y-4 max-w-4xl mx-auto">
             <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold text-sandigan-navy dark:text-white tracking-tight leading-[1.15]">
-              “You don&apos;t have to carry it alone.”
+              {t.tagline}
             </h1>
             <p className="font-heading text-xl sm:text-2xl text-sandigan-teal dark:text-sandigan-teal-300 font-medium">
-              Hindi mo kailangang dalhin ito nang mag-isa.
+              {t.subtagline}
             </p>
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed pt-2">
-              PROJECT SANDIGAN bridges technology, psychoeducation, and human-centered safeguarding to create a compassionate digital sanctuary for every Filipino youth.
+              {t.description}
             </p>
           </div>
 
@@ -110,7 +178,7 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <Link href="/services">
               <Button size="lg" variant="teal" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Explore 14 Core Services
+                {t.exploreServices}
               </Button>
             </Link>
             <Link href="/get-help-now">
@@ -120,7 +188,7 @@ export default function HomePage() {
                 className="bg-rose-600 hover:bg-rose-700 shadow-md font-semibold"
                 leftIcon={<ShieldAlert className="w-5 h-5" />}
               >
-                Get Urgent Help (24/7)
+                {t.urgentHelp}
               </Button>
             </Link>
           </div>
@@ -134,10 +202,10 @@ export default function HomePage() {
                 </div>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-rose-800 dark:text-rose-300">
-                    Immediate Crisis Lifeline (NCMH)
+                    {t.lifelineLabel}
                   </p>
                   <p className="text-xs text-rose-700 dark:text-rose-400">
-                    Free, confidential, and toll-free nationwide.
+                    {t.lifelineDesc}
                   </p>
                 </div>
               </div>
@@ -155,12 +223,12 @@ export default function HomePage() {
       {/* Core Principles Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <Badge variant="navy">Core Architecture</Badge>
+          <Badge variant="navy">{t.corePrinciplesBadge}</Badge>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-sandigan-navy dark:text-white">
-            Grounded in Safety and Compassion
+            {t.corePrinciplesTitle}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            SANDIGAN is built on strict ethical principles to protect your emotional well-being and privacy.
+            {t.corePrinciplesSubtitle}
           </p>
         </div>
 
@@ -186,17 +254,17 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
           <div className="space-y-2 max-w-xl">
-            <Badge variant="teal">Integrated Support Ecosystem</Badge>
+            <Badge variant="teal">{t.pathwaysBadge}</Badge>
             <h2 className="font-heading text-2xl sm:text-3xl font-bold text-sandigan-navy dark:text-white">
-              Essential Pathways to Support
+              {t.pathwaysTitle}
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Each service is thoughtfully engineered for privacy, genuine utility, and accessibility.
+              {t.pathwaysSubtitle}
             </p>
           </div>
           <Link href="/services">
             <Button variant="outline" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-              View All 14 Services
+              {t.viewAll}
             </Button>
           </Link>
         </div>
@@ -244,10 +312,10 @@ export default function HomePage() {
             </div>
             <div className="space-y-1.5">
               <h3 className="font-heading font-bold text-sm text-sandigan-navy dark:text-white">
-                Our Ethical Commitment to You
+                {t.ethicalTitle}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                PROJECT SANDIGAN is an educational and supportive platform. It does not replace licensed medical practitioners, psychiatrists, or clinical psychologists. Our AI officers (AMARA, TALA, GABAY, SIKLAB, DUNONG, KAWING, SINAG) strictly adhere to non-diagnostic boundaries. If you require medical evaluation, we facilitate verified pathways to accredited Philippine clinics and professionals.
+                {t.ethicalDesc}
               </p>
             </div>
           </div>
