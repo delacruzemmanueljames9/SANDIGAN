@@ -1,0 +1,65 @@
+[
+  {
+    "task_type": "orchestration",
+    "assigned_officer_code": "AMARA",
+    "originator": "system_test",
+    "payload": {
+      "scope": "test_orchestration"
+    },
+    "max_retries": 3,
+    "requires_human_approval": true,
+    "id": "task-1793358296580-xbzi",
+    "status": "pending",
+    "retry_count": 0,
+    "created_at": "2026-10-30T11:04:56.580Z",
+    "updated_at": "2026-10-30T11:04:56.580Z"
+  },
+  {
+    "task_type": "daily_reflection",
+    "assigned_officer_code": "SINAG",
+    "originator": "test_claim",
+    "payload": {
+      "theme": "Testing task locking"
+    },
+    "max_retries": 3,
+    "requires_human_approval": false,
+    "id": "task-1793358274394-87rs",
+    "status": "claimed",
+    "retry_count": 0,
+    "created_at": "2026-10-30T11:04:34.394Z",
+    "updated_at": "2026-10-30T11:04:34.394Z",
+    "claimed_by_worker_id": "test-worker-101",
+    "claimed_at": "2026-10-30T11:04:34.394Z"
+  },
+  {
+    "task_type": "crisis_triage",
+    "assigned_officer_code": "GABAY",
+    "originator": "system_test",
+    "payload": {
+      "context": "I need urgent support",
+      "user_id": "test-user-distress"
+    },
+    "max_retries": 3,
+    "requires_human_approval": false,
+    "id": "task-1793358272322-md83",
+    "status": "pending",
+    "retry_count": 0,
+    "created_at": "2026-10-30T11:04:32.322Z",
+    "updated_at": "2026-10-30T11:04:32.322Z"
+  },
+  {
+    "task_type": "orchestration",
+    "assigned_officer_code": "AMARA",
+    "originator": "system_test",
+    "payload": {
+      "scope": "test_orchestration"
+    },
+    "max_retries": 3,
+    "requires_human_approval": true,
+    "id": "task-1793358269545-v76m",
+    "status": "pending",
+    "retry_count": 0,
+    "created_at": "2026-10-30T11:04:29.545Z",
+    "updated_at": "2026-10-30T11:04:29.545Z"
+  }
+]

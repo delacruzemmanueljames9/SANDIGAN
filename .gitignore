@@ -36,3 +36,7 @@ next-env.d.ts
 *.pem
 .idea/
 .vscode/
+
+# Local backup checkpoint
+.backup_checkpoint
+.backup_checkpoint/

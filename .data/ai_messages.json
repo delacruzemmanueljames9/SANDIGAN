@@ -1,0 +1,26 @@
+[
+  {
+    "from_officer": "AMARA",
+    "to_officer": "AMARA",
+    "task_id": "task-1793358269545-v76m",
+    "channel": "conference_room",
+    "message": "AMARA completed ecosystem operational orchestration task.",
+    "metadata": {
+      "task_type": "orchestration"
+    },
+    "id": "msg-1793358272320-db93",
+    "created_at": "2026-10-30T11:04:32.320Z"
+  },
+  {
+    "from_officer": "GABAY",
+    "to_officer": "AMARA",
+    "task_id": "task-1793358272322-md83",
+    "channel": "conference_room",
+    "message": "GABAY completed safeguarding triage and emergency protocol validation.",
+    "metadata": {
+      "task_type": "crisis_triage"
+    },
+    "id": "msg-1793358274393-9fu2",
+    "created_at": "2026-10-30T11:04:34.393Z"
+  }
+]

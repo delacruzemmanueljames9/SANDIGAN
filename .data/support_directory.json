@@ -1,0 +1,113 @@
+[
+  {
+    "id": "prov-ncmh-1553",
+    "name": "National Center for Mental Health (NCMH) Crisis Hotline",
+    "organization_type": "government",
+    "description": "Official 24/7 crisis intervention service in the Philippines providing psychiatric emergency support, suicide prevention, and mental health assistance.",
+    "services_offered": [
+      "24/7 Crisis Hotline",
+      "Psychiatric Emergency",
+      "Counseling Referral"
+    ],
+    "contact_phone": "1553 / 0917-899-8727 / 0966-351-4518",
+    "contact_email": "ncmhcrisishotline@gmail.com",
+    "website_url": "https://ncmh.gov.ph",
+    "physical_address": "9 de Pebrero St, Mandaluyong City, Metro Manila",
+    "region": "National",
+    "is_24_7": true,
+    "is_free_service": true,
+    "verification_status": "verified",
+    "last_verified_at": "2026-10-30T10:00:00Z",
+    "created_at": "2026-10-30T10:00:00Z",
+    "updated_at": "2026-10-30T10:00:00Z"
+  },
+  {
+    "id": "prov-in-touch",
+    "name": "In Touch Community Services",
+    "organization_type": "ngo",
+    "description": "Volunteer counseling service providing 24/7 mental health crisis lines, emotional support, and subsidized professional therapy in the Philippines.",
+    "services_offered": [
+      "Crisis Line",
+      "Youth Counseling",
+      "Individual Therapy",
+      "Grief Support"
+    ],
+    "contact_phone": "02-8893-7603 / 0917-800-1123",
+    "contact_email": "crisisline@in-touch.org",
+    "website_url": "https://in-touch.org",
+    "physical_address": "48 McKinley Rd, Forbes Park, Makati City",
+    "region": "National",
+    "is_24_7": true,
+    "is_free_service": true,
+    "verification_status": "verified",
+    "last_verified_at": "2026-10-30T10:00:00Z",
+    "created_at": "2026-10-30T10:00:00Z",
+    "updated_at": "2026-10-30T10:00:00Z"
+  },
+  {
+    "id": "prov-hopeline-ph",
+    "name": "Hopeline Philippines",
+    "organization_type": "ngo",
+    "description": "24/7 suicide prevention and crisis support service operated in partnership with mental health advocates across the Philippines.",
+    "services_offered": [
+      "Suicide Prevention",
+      "Emotional Support",
+      "Youth Telecounseling"
+    ],
+    "contact_phone": "2919 (Globe/TM) / 02-8804-4673 / 0917-558-4673",
+    "contact_email": "hopeline@ngf-mindstrong.org",
+    "website_url": "https://facebook.com/HopelinePH",
+    "physical_address": "Metro Manila",
+    "region": "National",
+    "is_24_7": true,
+    "is_free_service": true,
+    "verification_status": "verified",
+    "last_verified_at": "2026-10-30T10:00:00Z",
+    "created_at": "2026-10-30T10:00:00Z",
+    "updated_at": "2026-10-30T10:00:00Z"
+  },
+  {
+    "id": "prov-pgh-psych",
+    "name": "Philippine General Hospital (PGH) Department of Psychiatry",
+    "organization_type": "hospital",
+    "description": "Free and subsidized public psychiatric consultations, diagnostic evaluations, and outpatient psychological therapy.",
+    "services_offered": [
+      "Psychiatric Consultation",
+      "Free Public Care",
+      "Outpatient Services"
+    ],
+    "contact_phone": "02-8554-8400 loc 2436",
+    "contact_email": "pghpsychiatry@up.edu.ph",
+    "website_url": "https://pgh.gov.ph",
+    "physical_address": "Taft Avenue, Ermita, Manila",
+    "region": "NCR",
+    "is_24_7": false,
+    "is_free_service": true,
+    "verification_status": "verified",
+    "last_verified_at": "2026-10-30T10:00:00Z",
+    "created_at": "2026-10-30T10:00:00Z",
+    "updated_at": "2026-10-30T10:00:00Z"
+  },
+  {
+    "id": "prov-bantay-bata",
+    "name": "Bantay Bata 163",
+    "organization_type": "ngo",
+    "description": "Dedicated youth protection helpline offering crisis response, psycho-social interventions, and youth counseling.",
+    "services_offered": [
+      "Child Protection",
+      "Youth Crisis Support",
+      "Family Counseling"
+    ],
+    "contact_phone": "163 / 0917-814-4163",
+    "contact_email": "bantaybata163@abs-cbnfoundation.com",
+    "website_url": "https://abscbnfoundation.org",
+    "physical_address": "Quezon City, Metro Manila",
+    "region": "National",
+    "is_24_7": true,
+    "is_free_service": true,
+    "verification_status": "verified",
+    "last_verified_at": "2026-10-30T10:00:00Z",
+    "created_at": "2026-10-30T10:00:00Z",
+    "updated_at": "2026-10-30T10:00:00Z"
+  }
+]

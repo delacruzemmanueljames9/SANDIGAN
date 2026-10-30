@@ -1,0 +1,21 @@
+[
+  {
+    "id": "appr-demo-1",
+    "task_id": "task-digest-7pm",
+    "requesting_officer": "AMARA",
+    "action_type": "external_broadcast",
+    "summary": "Publish 7 PM Founder Daily Operational Digest to Email & Notification Channel",
+    "details": {
+      "scheduled_time": "19:00 PST",
+      "recipients": [
+        "founder@tinigkabataan.org"
+      ],
+      "report_summary": "Comprehensive summary of daily wellness check-ins, officer tasks, and zero safeguarding flags."
+    },
+    "status": "approved",
+    "created_at": "2026-10-30T10:34:34.393Z",
+    "review_notes": "Verified by test runner",
+    "reviewed_by": "founder-emmanuel-james",
+    "reviewed_at": "2026-10-30T11:04:34.393Z"
+  }
+]

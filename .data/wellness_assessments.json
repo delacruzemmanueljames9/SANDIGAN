@@ -1,0 +1,44 @@
+[
+  {
+    "user_id": "test-user-001",
+    "check_in_type": "seven_question_check",
+    "scores": {
+      "mood": 4,
+      "energy": 3,
+      "anxiety": 2,
+      "sleep": 3,
+      "connection": 4,
+      "hope": 4,
+      "focus": 3
+    },
+    "composite_score": 3.29,
+    "non_clinical_insights": [
+      "Moderate energy balance",
+      "Healthy social connection score"
+    ],
+    "is_flagged_for_support": false,
+    "id": "wa-1793358292432-vxwll",
+    "created_at": "2026-10-30T11:04:52.432Z"
+  },
+  {
+    "user_id": "test-user-001",
+    "check_in_type": "seven_question_check",
+    "scores": {
+      "mood": 4,
+      "energy": 3,
+      "anxiety": 2,
+      "sleep": 3,
+      "connection": 4,
+      "hope": 4,
+      "focus": 3
+    },
+    "composite_score": 3.29,
+    "non_clinical_insights": [
+      "Moderate energy balance",
+      "Healthy social connection score"
+    ],
+    "is_flagged_for_support": false,
+    "id": "wa-1793358269543-rbvzy",
+    "created_at": "2026-10-30T11:04:29.543Z"
+  }
+]

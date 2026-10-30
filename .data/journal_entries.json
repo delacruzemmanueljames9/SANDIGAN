@@ -1,0 +1,30 @@
+[
+  {
+    "user_id": "test-user-journal-001",
+    "title": "A quiet afternoon reflection",
+    "content": "I noticed my breathing slowed down once I turned off social media notifications.",
+    "tags": [
+      "peace",
+      "mindfulness"
+    ],
+    "is_favorite": true,
+    "ai_reflection_requested": false,
+    "id": "je-1793358295520-bfl4w",
+    "created_at": "2026-10-30T11:04:55.520Z",
+    "updated_at": "2026-10-30T11:04:55.520Z"
+  },
+  {
+    "user_id": "test-user-journal-001",
+    "title": "A quiet afternoon reflection",
+    "content": "I noticed my breathing slowed down once I turned off social media notifications.",
+    "tags": [
+      "peace",
+      "mindfulness"
+    ],
+    "is_favorite": true,
+    "ai_reflection_requested": false,
+    "id": "je-1793358269544-uk6pa",
+    "created_at": "2026-10-30T11:04:29.544Z",
+    "updated_at": "2026-10-30T11:04:29.544Z"
+  }
+]

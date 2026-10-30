@@ -1,0 +1,14 @@
+[
+  {
+    "session_or_user_id": "test-user-distress",
+    "trigger_source": "talk_to_tinig",
+    "urgency_tier": "tier_2_moderate",
+    "detected_indicators": [
+      "Distress signal evaluated by GABAY"
+    ],
+    "guidance_presented": "I hear you, and I am right here with you. You don't have to carry this alone. Please take a slow, deep breath. \n\nBecause you mentioned needing urgent support, your safety and well-being are my absolute priority right now. \n\n### Immediate Safeguarding Guidance:\n1. **Pause and Breathe:** Try to ground yourself in this exact moment. Plant your feet firmly on the floor. \n2. **Reach Out to Someone You Trust:** If there is a trusted friend, family member, or housemate nearby, let them know right now that you are struggling and need support.\n3. **Connect with Professional Support:** Please talk to professionals who are trained to help you through this exact moment. You can reach out to them immediately—they are available 24/7, completely free, and confidential.\n\n---\n\n### Verified Philippine Emergency Hotlines:\n\n*   **National Center for Mental Health (NCMH) Crisis Hotline**\n    *   **Landline:** 1553 (Toll-free, nationwide)\n    *   **Mobile:** 0966-351-4518 / 0917-899-8727 (Globe/TM) | 0908-639-2672 (Smart/TNT)\n\n*   **In Touch Community Services**\n    *   **Landline:** +63 2 8893 7603\n    *   **Mobile:** +63 917 800 1123 (Globe) | +63 922 893 8944 (Sun)\n\n*   **Hopeline Philippines (NDFPI / Globe)**\n    *   **Mobile:** 2919 (Globe/TM toll-free)\n    *   **Landline:** +63 2 8804 4673\n\n*   **Emergency Services (Police, Fire, Medical)**\n    *   **National Emergency Hotline:** 911\n\nPlease connect with one of these resources right now. You matter, and help is available.",
+    "escalation_status": "guidance_delivered",
+    "id": "cs-1793358274392",
+    "created_at": "2026-10-30T11:04:34.392Z"
+  }
+]

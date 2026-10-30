@@ -1,0 +1,45 @@
+[
+  {
+    "user_id": "test-user-safety-001",
+    "warning_signs": [
+      "Feeling isolated",
+      "Skipping meals"
+    ],
+    "coping_strategies": [
+      "Deep breathing",
+      "Listening to acoustic music"
+    ],
+    "trusted_contacts": [
+      {
+        "name": "Ate Maria",
+        "relation": "Sister",
+        "phone": "0917-123-4567"
+      }
+    ],
+    "safe_environments": [
+      "My bedroom with ambient lights",
+      "Campus library"
+    ],
+    "professional_contacts": [
+      {
+        "name": "NCMH",
+        "role": "Crisis Line",
+        "phone": "1553"
+      }
+    ],
+    "emergency_contacts": [
+      {
+        "name": "Emergency Hotline",
+        "phone": "911"
+      }
+    ],
+    "distraction_techniques": [
+      "Sketching in journal",
+      "Taking a cold shower"
+    ],
+    "last_reviewed_at": "2026-10-30T11:04:53.622Z",
+    "id": "sp-test-user-safety-001",
+    "created_at": "2026-10-30T11:04:29.544Z",
+    "updated_at": "2026-10-30T11:04:53.622Z"
+  }
+]
