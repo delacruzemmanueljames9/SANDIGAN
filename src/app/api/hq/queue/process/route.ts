@@ -26,20 +26,33 @@ function isCronRequest(req: Request): boolean {
   return cronHeader === cronSecret;
 }
 
-export async function POST(req: Request) {
+async function handleQueueProcess(req: Request) {
   try {
     // ── Path 1: Machine caller authenticated via CRON_SECRET ──────────
     if (isCronRequest(req)) {
       let batchSize = 5;
       let officerId: string | undefined;
 
-      try {
-        const body = await req.json();
-        const validated = ProcessQueueBatchSchema.parse(body);
-        batchSize = validated.batchSize;
-        officerId = validated.officerId;
-      } catch {
-        // Use defaults if body is empty or invalid
+      if (req.method === "POST") {
+        try {
+          const body = await req.json();
+          const validated = ProcessQueueBatchSchema.parse(body);
+          batchSize = validated.batchSize;
+          officerId = validated.officerId;
+        } catch {
+          // Use defaults if body is empty or invalid
+        }
+      } else if (req.method === "GET") {
+        const url = new URL(req.url);
+        const queryBatchSize = url.searchParams.get("batchSize");
+        const queryOfficerId = url.searchParams.get("officerId");
+        if (queryBatchSize) {
+          const parsed = parseInt(queryBatchSize, 10);
+          if (!isNaN(parsed) && parsed > 0 && parsed <= 50) batchSize = parsed;
+        }
+        if (queryOfficerId) {
+          officerId = queryOfficerId;
+        }
       }
 
       const queueResult = await processTaskQueueBatch(batchSize, officerId);
@@ -48,6 +61,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         caller: "cron",
+        method: req.method,
         timestamp: new Date().toISOString(),
         queue: queueResult,
         scheduledJobs: jobsResult,
@@ -82,13 +96,26 @@ export async function POST(req: Request) {
     let batchSize = 5;
     let officerId: string | undefined;
 
-    try {
-      const body = await req.json();
-      const validated = ProcessQueueBatchSchema.parse(body);
-      batchSize = validated.batchSize;
-      officerId = validated.officerId;
-    } catch {
-      // Use defaults if empty body
+    if (req.method === "POST") {
+      try {
+        const body = await req.json();
+        const validated = ProcessQueueBatchSchema.parse(body);
+        batchSize = validated.batchSize;
+        officerId = validated.officerId;
+      } catch {
+        // Use defaults if empty body
+      }
+    } else if (req.method === "GET") {
+      const url = new URL(req.url);
+      const queryBatchSize = url.searchParams.get("batchSize");
+      const queryOfficerId = url.searchParams.get("officerId");
+      if (queryBatchSize) {
+        const parsed = parseInt(queryBatchSize, 10);
+        if (!isNaN(parsed) && parsed > 0 && parsed <= 50) batchSize = parsed;
+      }
+      if (queryOfficerId) {
+        officerId = queryOfficerId;
+      }
     }
 
     // 1. Process pending task batch
@@ -100,6 +127,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       caller: "founder",
+      method: req.method,
       timestamp: new Date().toISOString(),
       queue: queueResult,
       scheduledJobs: jobsResult,
@@ -108,4 +136,13 @@ export async function POST(req: Request) {
     console.error("Queue process API error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
+
+// Vercel Cron triggers GET requests; manual and automated workers use POST or GET
+export async function GET(req: Request) {
+  return handleQueueProcess(req);
+}
+
+export async function POST(req: Request) {
+  return handleQueueProcess(req);
 }

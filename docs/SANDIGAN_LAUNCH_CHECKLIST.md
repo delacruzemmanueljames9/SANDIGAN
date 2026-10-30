@@ -62,8 +62,9 @@
 - [ ] **Step 3.3: Verify Cron Configuration**  
   Confirm `vercel.json` crons are active in the Vercel dashboard:
   - Route: `/api/hq/queue/process`
-  - Schedule: `*/5 * * * *` (Every 5 minutes)
+  - Schedule: `0 0 * * *` (Once daily at midnight UTC / 8:00 AM PHT, compliant with Vercel Hobby limits)
   - Vercel automatically sends `Authorization: Bearer <CRON_SECRET>`
+  - *(Note: For continuous sub-hour task execution without upgrading Vercel, the local/CI autonomous worker `npm run worker` can be run independently using the same `CRON_SECRET`)*
 
 ---
 
