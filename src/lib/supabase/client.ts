@@ -3,10 +3,6 @@ import { createBrowserClient } from "@supabase/ssr";
 let supabaseBrowserClient: ReturnType<typeof createBrowserClient> | null = null;
 
 export function getSupabaseBrowserClient() {
-  if (typeof window === "undefined") {
-    throw new Error("getSupabaseBrowserClient can only be called in browser environments.");
-  }
-
   if (!supabaseBrowserClient) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://niavgdcttagjqcsvuvpc.supabase.co";
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";

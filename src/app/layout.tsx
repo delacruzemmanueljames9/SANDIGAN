@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CrisisBanner } from "@/components/layout/CrisisBanner";
 import { SITE_CONFIG } from "@/config/site";
+import { AuthProvider } from "@/lib/auth/auth-context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -61,10 +62,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${manrope.variable} scroll-smooth`} suppressHydrationWarning>
       <body className="min-h-screen flex flex-col font-sans antialiased">
-        <CrisisBanner />
-        <Header />
-        <main className="flex-1 flex flex-col">{children}</main>
-        <Footer />
+        <AuthProvider>
+          <CrisisBanner />
+          <Header />
+          <main className="flex-1 flex flex-col">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );
