@@ -57,6 +57,10 @@ export async function POST(req: Request) {
       },
     });
 
+    if (result.status === "failed") {
+      return NextResponse.json(result, { status: 502 });
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     console.error("Officer execute API error:", error);

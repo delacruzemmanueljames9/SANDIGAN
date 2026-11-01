@@ -152,11 +152,11 @@ export async function executeOfficerTask(
   } catch (err: unknown) {
     executionError = err instanceof Error ? err.message : String(err);
     console.error(`AI Officer [${officerName}] execution error:`, executionError);
-    // Provide safe, non-crashing fallback
+    // Surface real failure explicitly rather than returning silent mock fallbacks
     executionOutput = {
-      fallback: true,
-      message: OFFICER_FALLBACKS[officerName],
-      notice: "Service operates under safe fallback mode.",
+      failed: true,
+      error: executionError,
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -206,25 +206,48 @@ async function handleAmaraTask(
 ): Promise<Record<string, unknown>> {
   const supabase = getSupabaseAdminClient();
 
-  if (taskType === "system_health_audit") {
-    const { count: tasksCount } = await supabase.from("ai_tasks").select("id", { count: "exact" });
-    const { count: messagesCount } = await supabase.from("ai_messages").select("id", { count: "exact" });
-    const { count: approvalsCount } = await supabase
-      .from("founder_approvals")
-      .select("id", { count: "exact" })
-      .eq("status", "pending");
+  const { count: tasksCount } = await supabase.from("ai_tasks").select("id", { count: "exact" });
+  const { count: messagesCount } = await supabase.from("ai_messages").select("id", { count: "exact" });
+  const { count: approvalsCount } = await supabase
+    .from("founder_approvals")
+    .select("id", { count: "exact" })
+    .eq("status", "pending");
 
-    return {
-      healthy: true,
-      officersOnline: 7,
-      totalTasksLogged: tasksCount || 0,
-      totalMessagesLogged: messagesCount || 0,
-      pendingApprovals: approvalsCount || 0,
-      timestamp: new Date().toISOString(),
-    };
-  }
+  const telemetryMetrics = {
+    tasksCount: tasksCount || 0,
+    messagesCount: messagesCount || 0,
+    pendingApprovals: approvalsCount || 0,
+    timestamp: new Date().toISOString(),
+  };
 
-  return { status: "processed", payload };
+  const userPrompt =
+    taskType === "system_health_audit"
+      ? `Conduct an operational supervisory briefing based on real-time ecosystem telemetry:
+- Total AI Tasks logged: ${telemetryMetrics.tasksCount}
+- Inter-Officer Messages exchanged: ${telemetryMetrics.messagesCount}
+- Pending Founder Approvals: ${telemetryMetrics.pendingApprovals}
+- System Subsystems: 7 Autonomous AI Officers Online.
+
+Provide a concise, 2-3 sentence executive operational analysis and status directive as AMARA. Maintain a vigilant, decisive, and protective tone.`
+      : (payload.query as string) ||
+        (payload.message as string) ||
+        `Provide an executive orchestration update and supervisory directive for task type: ${taskType}. Context: ${JSON.stringify(payload).slice(0, 300)}`;
+
+  const executiveBriefing = await generateOfficerResponse({
+    systemInstruction: OFFICER_PROMPTS.AMARA,
+    userPrompt,
+  });
+
+  return {
+    healthy: true,
+    officersOnline: 7,
+    totalTasksLogged: telemetryMetrics.tasksCount,
+    totalMessagesLogged: telemetryMetrics.messagesCount,
+    pendingApprovals: telemetryMetrics.pendingApprovals,
+    executiveBriefing,
+    timestamp: telemetryMetrics.timestamp,
+    officer: "AMARA (ORCHESTRATOR-01)",
+  };
 }
 
 // ─── TALA HANDLER ─────────────────────────────────────────────────────────────
@@ -292,11 +315,11 @@ async function handleGabayTask(
   payload: Record<string, unknown>,
   userContext?: { userId?: string }
 ): Promise<Record<string, unknown>> {
-  const text = (payload.text as string) || "";
+  const text = (payload.text as string) || (payload.message as string) || (payload.content as string) || "";
   const crisisCheck = detectCrisisSignals(text);
   const supabase = getSupabaseAdminClient();
 
-  // If crisis is detected, create record in crisis_safeguarding_logs
+  // 1. If crisis is detected, create record in crisis_safeguarding_logs
   if (crisisCheck.isCrisis) {
     try {
       await supabase.from("crisis_safeguarding_logs").insert({
@@ -312,6 +335,22 @@ async function handleGabayTask(
     }
   }
 
+  // 2. Generate authentic compassionate, de-escalating response via Gemini
+  const prompt = text.trim()
+    ? `User message or context: "${text.trim()}".
+Crisis status: ${
+        crisisCheck.isCrisis
+          ? `CRITICAL/HIGH (${crisisCheck.matchedKeywords.join(", ")})`
+          : "General distress / emotional overwhelm check-in"
+      }.
+Deliver a calm, compassionate, non-diagnostic response as GABAY. Emphasize that they do not have to carry it alone. If crisis keywords were matched, reassure them and guide them gently to emergency care.`
+    : "A community member has reached out for crisis or safeguarding guidance. Provide a reassuring, grounded message assuring them that help and verified Philippine hotlines are available.";
+
+  const dynamicResponse = await generateOfficerResponse({
+    systemInstruction: OFFICER_PROMPTS.GABAY,
+    userPrompt: prompt,
+  });
+
   return {
     isCrisis: crisisCheck.isCrisis,
     riskLevel: crisisCheck.severity,
@@ -322,9 +361,8 @@ async function handleGabayTask(
       hopeline: { number: "2919", label: "Hopeline Philippines" },
       emergency: { number: "911", label: "National Emergency Services" },
     },
-    message: crisisCheck.isCrisis
-      ? "It sounds like you may be going through something very difficult. Please know that you do not have to carry this alone."
-      : "No immediate crisis indicators detected.",
+    message: dynamicResponse,
+    guidance: dynamicResponse,
     officer: "GABAY (CRISIS-LEAD-03)",
   };
 }
@@ -434,18 +472,59 @@ async function handleKawingTask(
       .eq("id", providerId as string)
       .maybeSingle();
 
+    const intakePrompt = `Create a professional, privacy-conscious referral coordination brief for a client seeking mental health care:
+- Provider: ${provider?.name || providerId} (${provider?.verification_status || "pending_review"})
+- Preferred Contact Method: ${preferredContact || "Not specified"}
+- Referral Context/Notes: ${(notes as string)?.slice(0, 300) || "Routine support referral"}
+Synthesize a concise, 2-sentence clinical coordination summary as KAWING. Emphasize client consent and confidentiality.`;
+
+    const intakeSummary = await generateOfficerResponse({
+      systemInstruction: OFFICER_PROMPTS.KAWING,
+      userPrompt: intakePrompt,
+    });
+
     return {
       status: "packaged",
       providerName: provider?.name || providerId,
       verificationStatus: provider?.verification_status || "pending_review",
       preferredContact,
-      intakeSummary: (notes as string)?.slice(0, 200),
+      intakeSummary,
       consentRecorded: true,
       officer: "KAWING (PARTNERSHIPS-06)",
     };
   }
 
-  return { status: "processed", officer: "KAWING (PARTNERSHIPS-06)" };
+  // Referral guidance and directory navigation
+  const query = (payload.query as string) || (payload.message as string) || "How can I access professional mental health support in the Philippines?";
+  const region = (payload.region as string) || "National / NCR";
+
+  const { data: verifiedProviders } = await supabase
+    .from("support_directory")
+    .select("name, service_type, region, is_free, contact_phone")
+    .eq("verification_status", "verified")
+    .limit(3);
+
+  const providerContext = (verifiedProviders && verifiedProviders.length > 0)
+    ? verifiedProviders.map((p) => `- ${p.name} (${p.service_type}, ${p.region}${p.is_free ? ", Free" : ""}): ${p.contact_phone || "Contact via Sandigan Directory"}`).join("\n")
+    : "- NCMH Crisis Care & Outpatient Services (National)\n- In Touch Community Services (Metro Manila / Teleconsult)\n- PGH Department of Psychiatry & Behavioral Medicine (Public / Free)";
+
+  const guidancePrompt = `User inquiry: "${query}". Region: ${region}.
+Available verified directory resources:
+${providerContext}
+
+As KAWING, provide a warm, organized, step-by-step guidance explanation on how to connect with these verified resources, what to prepare for an intake, and how client consent is respected.`;
+
+  const guidance = await generateOfficerResponse({
+    systemInstruction: OFFICER_PROMPTS.KAWING,
+    userPrompt: guidancePrompt,
+  });
+
+  return {
+    query,
+    guidance,
+    recommendedProviders: verifiedProviders || [],
+    officer: "KAWING (PARTNERSHIPS-06)",
+  };
 }
 
 // ─── SINAG HANDLER ────────────────────────────────────────────────────────────

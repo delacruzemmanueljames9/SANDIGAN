@@ -66,10 +66,18 @@ export async function POST(req: NextRequest) {
       userContext: { userId: user.id },
     });
 
-    const reflection =
-      (siklabResult.data.reflection as string) ||
-      "Thank you for completing your wellness check-in. Every reflection is a step toward greater self-awareness. Remember, this is a personal reflection tool — not a clinical assessment.";
+    if (siklabResult.status === "failed") {
+      return NextResponse.json(
+        {
+          error: "SIKLAB reflection generation failed",
+          details: siklabResult.error || "AI generation failed",
+          officer: "SIKLAB (ANALYST-04)",
+        },
+        { status: 502 }
+      );
+    }
 
+    const reflection = siklabResult.data.reflection as string;
     const recommendations = (siklabResult.data.educationalRecommendations as string[]) || [
       "Try the Reset Room for grounding exercises",
       "Write in your Inner Garden journal",

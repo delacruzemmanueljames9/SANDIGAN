@@ -11,16 +11,27 @@ export async function GET() {
       payload: {},
     });
 
+    if (result.status === "failed") {
+      return NextResponse.json(
+        {
+          error: "Failed to generate daily companion package",
+          details: result.error || "AI generation failed",
+          officer: "SINAG (COMPANION-07)",
+        },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json(result.data);
   } catch (error) {
     console.error("Daily companion error:", error);
-    return NextResponse.json({
-      quote: "Habang may buhay, may pag-asa. (While there is life, there is hope.)",
-      author: "Filipino Proverb",
-      reflection_prompt: "What is one small thing that brought you comfort or peace this week?",
-      micro_action: "Take three slow, deep breaths before you start your next task today.",
-      date: new Date().toISOString().split("T")[0],
-      officer: "SINAG (COMPANION-07)",
-    });
+    return NextResponse.json(
+      {
+        error: "Daily companion service error",
+        details: error instanceof Error ? error.message : "Internal error",
+        officer: "SINAG (COMPANION-07)",
+      },
+      { status: 500 }
+    );
   }
 }
