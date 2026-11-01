@@ -14,7 +14,7 @@ const clientEnvSchema = z.object({
 const serverEnvSchema = clientEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   GEMINI_API_KEY: z.string().min(1).optional(),
-  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+  GEMINI_MODEL: z.string().default("gemini-3.5-flash-lite"),
   WORKER_AUTH_TOKEN: z.string().optional(),
   CRON_SECRET: z.string().optional(),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(60),
@@ -42,7 +42,7 @@ export function getServerEnv(): ServerEnv {
     ...client,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-    GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+    GEMINI_MODEL: process.env.GEMINI_MODEL || "gemini-3.5-flash-lite",
     WORKER_AUTH_TOKEN: process.env.WORKER_AUTH_TOKEN,
     CRON_SECRET: process.env.CRON_SECRET,
     RATE_LIMIT_MAX_REQUESTS: Number(process.env.RATE_LIMIT_MAX_REQUESTS) || 60,

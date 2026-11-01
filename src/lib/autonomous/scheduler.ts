@@ -1,4 +1,4 @@
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/server";
 import { executeOfficerTask } from "@/lib/ai/orchestrator";
 import { recoverStalledTasks } from "@/lib/autonomous/task-queue";
 import type { ScheduledJob } from "@/types";
@@ -84,7 +84,7 @@ export const SCHEDULED_JOB_REGISTRY: Record<string, { handler: JobHandlerFn; des
         payload: { source: "autonomous_job" },
       });
 
-      const supabase = getSupabaseServerClient();
+      const supabase = getSupabaseAdminClient();
       const metrics = result.data as Record<string, number>;
       if (metrics.pendingApprovals !== undefined) {
         await supabase.from("system_metrics").insert([
@@ -102,7 +102,7 @@ export const SCHEDULED_JOB_REGISTRY: Record<string, { handler: JobHandlerFn; des
   tala_community_safety_sweep: {
     description: "Scan pending community posts and audit unreviewed moderation flags",
     handler: async () => {
-      const supabase = getSupabaseServerClient();
+      const supabase = getSupabaseAdminClient();
       const { data: pendingPosts } = await supabase
         .from("community_posts")
         .select("id, title, content")
@@ -140,7 +140,7 @@ export const SCHEDULED_JOB_REGISTRY: Record<string, { handler: JobHandlerFn; des
   kawing_partner_directory_audit: {
     description: "Verify operational status of crisis hotlines and Philippine support directory",
     handler: async () => {
-      const supabase = getSupabaseServerClient();
+      const supabase = getSupabaseAdminClient();
       const { data: providers } = await supabase
         .from("support_directory")
         .select("id, name, verification_status")
@@ -169,7 +169,7 @@ export const SCHEDULED_JOB_REGISTRY: Record<string, { handler: JobHandlerFn; des
  * Seeds default baseline scheduled jobs if public.scheduled_jobs is empty.
  */
 export async function seedDefaultJobsIfEmpty(): Promise<void> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { count } = await supabase.from("scheduled_jobs").select("id", { count: "exact" });
 
   if (count && count > 0) return;
@@ -224,7 +224,7 @@ export async function executeScheduledJob(
   manual = false
 ): Promise<{ success: boolean; durationMs: number; details?: Record<string, unknown>; error?: string }> {
   const start = Date.now();
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const now = new Date();
 
   // Optimistic lock on last_run_at to prevent overlapping executions
@@ -305,7 +305,7 @@ export async function processDueScheduledJobs(): Promise<{
   executed: number;
   failed: number;
 }> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const now = new Date().toISOString();
 
   // Ensure default baseline jobs exist
@@ -338,7 +338,7 @@ export async function processDueScheduledJobs(): Promise<{
  * Pause a scheduled job.
  */
 export async function pauseScheduledJob(jobId: string): Promise<boolean> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { error } = await supabase
     .from("scheduled_jobs")
     .update({ is_active: false })
@@ -350,7 +350,7 @@ export async function pauseScheduledJob(jobId: string): Promise<boolean> {
  * Resume a scheduled job and set the next execution timestamp.
  */
 export async function resumeScheduledJob(jobId: string): Promise<boolean> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data: job } = await supabase
     .from("scheduled_jobs")
     .select("cron_expression")

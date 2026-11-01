@@ -18,6 +18,18 @@ export async function POST(req: Request) {
       payload: { query: query.trim() },
     });
 
+    if (result.status === "failed") {
+      return NextResponse.json(
+        {
+          success: false,
+          officer: "DUNONG (CURATOR-05)",
+          error: result.error || "AI generation failed",
+          executionDurationMs: result.executionDurationMs,
+        },
+        { status: 502 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       officer: "DUNONG (CURATOR-05)",
@@ -26,16 +38,13 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("DUNONG API error:", error);
-    return NextResponse.json({
-      success: true,
-      officer: "DUNONG (CURATOR-05)",
-      data: {
-        query: "Mental Health Psychoeducation",
-        answer:
-          "According to the World Health Organization (WHO), mental health is a state of mental well-being that enables people to cope with the stresses of life, realize their abilities, learn well and work well, and contribute to their community. If you need support, verified Philippine resources are accessible through our directory.",
-        institutionalSources: ["World Health Organization (WHO)", "Department of Health (DOH) Philippines"],
-        verifiedCitations: true,
+    return NextResponse.json(
+      {
+        success: false,
+        officer: "DUNONG (CURATOR-05)",
+        error: error instanceof Error ? error.message : "Internal officer execution error",
       },
-    });
+      { status: 500 }
+    );
   }
 }

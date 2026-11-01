@@ -1,4 +1,4 @@
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/server";
 import { AI_OFFICERS } from "@/config/officers";
 import type { SystemEvent } from "@/types";
 
@@ -46,7 +46,7 @@ export interface SystemHealthOverview {
  * Calculates genuine multi-agent queue health, officer success rates, and subsystem statuses.
  */
 export async function getSystemHealthOverview(): Promise<SystemHealthOverview> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const now = new Date();
   const stalledThreshold = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
 
@@ -146,7 +146,7 @@ export async function getSystemHealthOverview(): Promise<SystemHealthOverview> {
  * Record a custom metric to public.system_metrics.
  */
 export async function recordSystemMetric(name: string, value: number): Promise<boolean> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { error } = await supabase.from("system_metrics").insert({
     metric_name: name,
     metric_value: value,
@@ -164,7 +164,7 @@ export async function recordSystemEvent(params: {
   message: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { error } = await supabase.from("system_events").insert({
     event_type: params.eventType,
     event_level: params.eventLevel,

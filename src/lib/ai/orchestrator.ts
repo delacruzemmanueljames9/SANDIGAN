@@ -1,4 +1,4 @@
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/server";
 import { generateOfficerResponse, detectCrisisSignals } from "@/lib/ai/gemini";
 import { AI_OFFICERS } from "@/config/officers";
 import { OFFICER_PROMPTS, type OfficerKey } from "@/lib/ai/officers/prompts";
@@ -38,7 +38,7 @@ export async function executeOfficerTask(
   params: OfficerExecutionParams
 ): Promise<OfficerExecutionResult> {
   const start = Date.now();
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { officerName, taskType, payload } = params;
 
   const officerProfile = AI_OFFICERS[officerName];
@@ -204,7 +204,7 @@ async function handleAmaraTask(
   taskType: string,
   payload: Record<string, unknown>
 ): Promise<Record<string, unknown>> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
 
   if (taskType === "system_health_audit") {
     const { count: tasksCount } = await supabase.from("ai_tasks").select("id", { count: "exact" });
@@ -257,19 +257,15 @@ async function handleTalaTask(
   let toxicityAssessment = { isToxic: false, reasoning: "Clean community reflection." };
 
   if (text.length > 20 && !crisisCheck.isCrisis) {
-    try {
-      const response = await generateOfficerResponse({
-        systemInstruction: `${OFFICER_PROMPTS.TALA}\n\nAnalyze the text for harassment, bullying, or hate speech. Output valid JSON: {"isToxic": boolean, "reasoning": "brief explanation"}. Output ONLY JSON.`,
-        userPrompt: text,
-      });
+    const response = await generateOfficerResponse({
+      systemInstruction: `${OFFICER_PROMPTS.TALA}\n\nAnalyze the text for harassment, bullying, or hate speech. Output valid JSON: {"isToxic": boolean, "reasoning": "brief explanation"}. Output ONLY JSON.`,
+      userPrompt: text,
+    });
 
-      const cleaned = response.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
-      const parsed = JSON.parse(cleaned);
-      if (typeof parsed.isToxic === "boolean") {
-        toxicityAssessment = parsed;
-      }
-    } catch {
-      // Keep clean fallback if model unavailable
+    const cleaned = response.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
+    const parsed = JSON.parse(cleaned);
+    if (typeof parsed.isToxic === "boolean") {
+      toxicityAssessment = parsed;
     }
   }
 
@@ -298,7 +294,7 @@ async function handleGabayTask(
 ): Promise<Record<string, unknown>> {
   const text = (payload.text as string) || "";
   const crisisCheck = detectCrisisSignals(text);
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
 
   // If crisis is detected, create record in crisis_safeguarding_logs
   if (crisisCheck.isCrisis) {
@@ -368,12 +364,7 @@ async function handleSiklabTask(
     social_connection: computeScore(categories.social),
   };
 
-  // Generate non-diagnostic reflection
-  let reflection =
-    "Your check-in reflects your current moment of self-awareness. Taking time to notice how you are feeling is a meaningful first step in caring for your well-being.";
-
-  try {
-    const prompt = `Based on these self-reported wellness scores (0-100 scale, where higher is more stable):
+  const prompt = `Based on these self-reported wellness scores (0-100 scale, where higher is more stable):
 Sleep: ${scores.sleep}/100
 Stress Management: ${scores.stress}/100
 Emotional Energy: ${scores.emotional_energy}/100
@@ -381,13 +372,10 @@ Social Connection: ${scores.social_connection}/100
 
 Generate a brief (2-3 sentences), compassionate, non-diagnostic reflection highlighting a balance of empathy and gentle encouragement for Filipino youth. Do not diagnose.`;
 
-    reflection = await generateOfficerResponse({
-      systemInstruction: OFFICER_PROMPTS.SIKLAB,
-      userPrompt: prompt,
-    });
-  } catch {
-    // Graceful fallback
-  }
+  const reflection = await generateOfficerResponse({
+    systemInstruction: OFFICER_PROMPTS.SIKLAB,
+    userPrompt: prompt,
+  });
 
   return {
     categoryScores: scores,
@@ -410,17 +398,10 @@ async function handleDunongTask(
 ): Promise<Record<string, unknown>> {
   const query = (payload.query as string) || "General mental health psychoeducation";
 
-  let responseText =
-    "Mental health encompasses emotional, psychological, and social well-being. According to the World Health Organization (WHO), it is a fundamental human right essential for personal and community development.";
-
-  try {
-    responseText = await generateOfficerResponse({
-      systemInstruction: `${OFFICER_PROMPTS.DUNONG}\n\nProvide an evidence-informed, youth-accessible explanation. You must cite real institutional sources (e.g. WHO, APA, or DOH Philippines). NEVER fabricate citations.`,
-      userPrompt: query,
-    });
-  } catch {
-    // Graceful fallback
-  }
+  const responseText = await generateOfficerResponse({
+    systemInstruction: `${OFFICER_PROMPTS.DUNONG}\n\nProvide an evidence-informed, youth-accessible explanation. You must cite real institutional sources (e.g. WHO, APA, or DOH Philippines). NEVER fabricate citations.`,
+    userPrompt: query,
+  });
 
   return {
     query,
@@ -437,7 +418,7 @@ async function handleKawingTask(
   taskType: string,
   payload: Record<string, unknown>
 ): Promise<Record<string, unknown>> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
 
   if (taskType === "package_referral_intake") {
     const { providerId, preferredContact, notes, consentGranted } = payload;
@@ -475,25 +456,13 @@ async function handleSinagTask(
 ): Promise<Record<string, unknown>> {
   if (taskType === "generate_daily_companion_package") {
     const today = new Date().toISOString().split("T")[0];
-    let dailyData = {
-      quote: "Habang may buhay, may pag-asa. (While there is life, there is hope.)",
-      author: "Filipino Proverb",
-      reflection_prompt: "What is one small thing that grounded you today?",
-      micro_action: "Take three slow, intentional breaths before starting your next task.",
-      date: today,
-    };
+    const response = await generateOfficerResponse({
+      systemInstruction: `${OFFICER_PROMPTS.SINAG}\nGenerate a daily wellness JSON object: {"quote": "...", "author": "...", "reflection_prompt": "...", "micro_action": "..."}. Only JSON.`,
+      userPrompt: `Generate daily wellness package for ${today}.`,
+    });
 
-    try {
-      const response = await generateOfficerResponse({
-        systemInstruction: `${OFFICER_PROMPTS.SINAG}\nGenerate a daily wellness JSON object: {"quote": "...", "author": "...", "reflection_prompt": "...", "micro_action": "..."}. Only JSON.`,
-        userPrompt: `Generate daily wellness package for ${today}.`,
-      });
-
-      const cleaned = response.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
-      dailyData = { ...JSON.parse(cleaned), date: today };
-    } catch {
-      // Use fallback
-    }
+    const cleaned = response.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
+    const dailyData = { ...JSON.parse(cleaned), date: today };
 
     return { ...dailyData, officer: "SINAG (COMPANION-07)" };
   }
@@ -501,16 +470,11 @@ async function handleSinagTask(
   const prompt = (payload.message as string) || (payload.prompt as string) || "Kumusta?";
   const history = (payload.history as Array<{ role: "user" | "model"; text: string }>) || [];
 
-  let reply = OFFICER_FALLBACKS.SINAG;
-  try {
-    reply = await generateOfficerResponse({
-      systemInstruction: OFFICER_PROMPTS.SINAG,
-      userPrompt: prompt,
-      conversationHistory: history,
-    });
-  } catch {
-    // Fallback
-  }
+  const reply = await generateOfficerResponse({
+    systemInstruction: OFFICER_PROMPTS.SINAG,
+    userPrompt: prompt,
+    conversationHistory: history,
+  });
 
   return { reply, officer: "SINAG (COMPANION-07)" };
 }
@@ -526,7 +490,7 @@ export async function sendInterOfficerMessage(params: {
   payload?: Record<string, unknown>;
 }): Promise<{ success: boolean; messageId?: string }> {
   try {
-    const supabase = getSupabaseServerClient();
+    const supabase = getSupabaseAdminClient();
     const { data, error } = await supabase
       .from("ai_messages")
       .insert({

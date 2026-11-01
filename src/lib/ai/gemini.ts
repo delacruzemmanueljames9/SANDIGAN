@@ -80,7 +80,7 @@ export async function generateOfficerResponse(params: {
   modelName?: string;
 }): Promise<string> {
   const ai = getGeminiClient();
-  const model = params.modelName || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = params.modelName || process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
   const contents = [
     ...(params.conversationHistory || []).map((msg) => ({

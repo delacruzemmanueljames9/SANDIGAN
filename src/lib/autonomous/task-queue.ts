@@ -1,4 +1,4 @@
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/server";
 import { executeOfficerTask } from "@/lib/ai/orchestrator";
 import {
   EnqueueTaskSchema,
@@ -35,7 +35,7 @@ export async function enqueueTask(input: EnqueueTaskInput): Promise<{
   error?: string;
 }> {
   const validated = EnqueueTaskSchema.parse(input);
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
 
   const officerNameMap: Record<string, OfficerName> = {
     "amara-orchestrator": "AMARA",
@@ -117,7 +117,7 @@ export async function enqueueTask(input: EnqueueTaskInput): Promise<{
  * Transitions status to 'in_progress' and increments current_attempts.
  */
 export async function fetchNextPendingTask(officerId?: string): Promise<AITask | null> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const now = new Date().toISOString();
 
   // Priority order for ordering
@@ -173,7 +173,7 @@ export async function processTask(task: AITask): Promise<{
   error?: string;
 }> {
   const start = Date.now();
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
 
   const officerNameMap: Record<string, OfficerName> = {
     "amara-orchestrator": "AMARA",
@@ -316,7 +316,7 @@ export async function recoverStalledTasks(stalledMinutes = 10): Promise<{
   recoveredCount: number;
   failedCount: number;
 }> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const threshold = new Date(Date.now() - stalledMinutes * 60 * 1000).toISOString();
 
   const { data: stalled, error } = await supabase

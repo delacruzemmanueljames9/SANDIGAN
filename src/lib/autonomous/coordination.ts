@@ -1,4 +1,4 @@
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/server";
 import { type OfficerName } from "@/lib/ai/officers/definitions";
 import type { AIMessage } from "@/types";
 
@@ -23,7 +23,7 @@ export async function routeInterOfficerMessage(params: SendMessageParams): Promi
   quarantined?: boolean;
   error?: string;
 }> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const currentHop = (params.hopCount || (params.payload?.hopCount as number) || 0) + 1;
 
   // Anti-loop safeguard: prevent recursive agent-to-agent loops
@@ -92,7 +92,7 @@ export async function routeInterOfficerMessage(params: SendMessageParams): Promi
  * Mark an inter-officer message as read and processed.
  */
 export async function acknowledgeMessage(messageId: string): Promise<boolean> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { error } = await supabase
     .from("ai_messages")
     .update({ is_read: true })
@@ -104,7 +104,7 @@ export async function acknowledgeMessage(messageId: string): Promise<boolean> {
  * Fetch recent inter-agent messages.
  */
 export async function getRecentCoordinationMessages(limit = 30): Promise<AIMessage[]> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const { data } = await supabase
     .from("ai_messages")
     .select("*")
