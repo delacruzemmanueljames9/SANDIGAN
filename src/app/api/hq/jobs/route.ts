@@ -9,6 +9,7 @@ import {
 import { UpdateJobStatusSchema } from "@/lib/autonomous/types";
 import { z } from "zod";
 import type { ScheduledJob } from "@/types";
+import { verifyFounderOrAdmin } from "@/lib/auth/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -24,14 +25,8 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: roleRecord } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .in("role", ["founder", "admin"])
-      .maybeSingle();
-
-    if (!roleRecord) {
+    const isAuthorized = await verifyFounderOrAdmin(user, supabase);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -64,14 +59,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: roleRecord } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .in("role", ["founder", "admin"])
-      .maybeSingle();
-
-    if (!roleRecord) {
+    const isAuthorized = await verifyFounderOrAdmin(user, supabase);
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -18,6 +18,7 @@ import {
   Radio,
   Building2,
   Users,
+  LogOut,
 } from "lucide-react";
 import type { AIOfficerProfile } from "@/config/officers";
 import type {
@@ -184,6 +185,16 @@ export default function HqDashboardPage() {
     }
   };
 
+  // Terminate Founder Session
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/hq/auth/logout", { method: "POST" });
+    } catch {
+      // Ignored
+    }
+    window.location.href = "/hq/login";
+  };
+
   const pendingApprovalsCount = approvals.filter((a) => a.status === "pending").length;
   const unacknowledgedCrisisCount = crisisAlerts.filter((a) => !a.user_acknowledged).length;
 
@@ -218,7 +229,7 @@ export default function HqDashboardPage() {
             <Button size="sm" onClick={() => fetchData()} className="text-xs">
               Retry Connection
             </Button>
-            <Link href="/auth/login">
+            <Link href="/hq/login">
               <Button size="sm" variant="outline" className="text-xs">
                 Log In as Founder
               </Button>
@@ -265,6 +276,16 @@ export default function HqDashboardPage() {
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
                 <span className="hidden sm:inline">Refresh</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleLogout}
+                className="text-xs text-rose-300 hover:text-white hover:bg-rose-950/60 border border-rose-900/40 gap-1.5 h-8 px-2.5"
+                title="Lock HQ and terminate session"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                <span className="hidden sm:inline">Lock HQ</span>
               </Button>
             </div>
           </div>

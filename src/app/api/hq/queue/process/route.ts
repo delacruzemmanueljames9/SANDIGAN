@@ -3,6 +3,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { processTaskQueueBatch } from "@/lib/autonomous/task-queue";
 import { processDueScheduledJobs } from "@/lib/autonomous/scheduler";
 import { ProcessQueueBatchSchema } from "@/lib/autonomous/types";
+import { verifyFounderOrAdmin } from "@/lib/auth/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -79,14 +80,8 @@ async function handleQueueProcess(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: roleRecord } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .in("role", ["founder", "admin"])
-      .maybeSingle();
-
-    if (!roleRecord) {
+    const isAuthorized = await verifyFounderOrAdmin(user, supabase);
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: "Forbidden: Founder access required" },
         { status: 403 }

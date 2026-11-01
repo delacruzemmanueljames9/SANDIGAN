@@ -40,9 +40,42 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
 
-  const isHqApiRoute = pathname.startsWith("/api/hq");
-  const isHqPageRoute = pathname === "/hq" || pathname.startsWith("/hq/");
+  const isHqAuthApi = pathname.startsWith("/api/hq/auth");
+  const isHqApiRoute = pathname.startsWith("/api/hq") && !isHqAuthApi;
+  const isHqLogin = pathname === "/hq/login";
+  const isHqPageRoute = (pathname === "/hq" || pathname.startsWith("/hq/")) && !isHqLogin;
   const isSettingsRoute = pathname.startsWith("/settings");
+
+  // Helper for verified founder / admin clearance
+  const checkClearance = async (): Promise<boolean> => {
+    if (!user) return false;
+    // 1. Cryptographically signed Supabase Auth JWT app_metadata
+    if (
+      user.app_metadata?.role === "founder" ||
+      user.app_metadata?.role === "admin" ||
+      user.app_metadata?.is_founder === true
+    ) {
+      return true;
+    }
+    // 2. Identity match for designated founder
+    const founderEmail = (process.env.FOUNDER_EMAIL || "delacruzemmanueljames9@gmail.com").toLowerCase();
+    if ((user.email || "").toLowerCase() === founderEmail) {
+      return true;
+    }
+    // 3. Database public.user_roles row
+    try {
+      const { data: roleRecord } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .in("role", ["founder", "admin"])
+        .maybeSingle();
+      if (roleRecord) return true;
+    } catch {
+      // Handled fail-closed below
+    }
+    return false;
+  };
 
   // 1. Settings Routes: Require authentication
   if (isSettingsRoute && !user) {
@@ -58,23 +91,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    try {
-      const { data: roleRecord, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .in("role", ["founder", "admin"])
-        .maybeSingle();
-
-      if (roleError || !roleRecord) {
-        return NextResponse.json(
-          { error: "Forbidden: Founder or Administrator access required." },
-          { status: 403 }
-        );
-      }
-    } catch {
+    const isAuthorized = await checkClearance();
+    if (!isAuthorized) {
       return NextResponse.json(
-        { error: "Forbidden: Authorization verification failed." },
+        { error: "Forbidden: Founder or Administrator access required." },
         { status: 403 }
       );
     }
@@ -84,30 +104,17 @@ export async function middleware(request: NextRequest) {
   if (isHqPageRoute) {
     if (!user) {
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/auth/login";
+      redirectUrl.pathname = "/hq/login";
       redirectUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(redirectUrl);
     }
 
-    try {
-      const { data: roleRecord, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .in("role", ["founder", "admin"])
-        .maybeSingle();
-
-      if (roleError || !roleRecord) {
-        // Fail closed: Redirect unauthorized user away from HQ
-        const deniedUrl = request.nextUrl.clone();
-        deniedUrl.pathname = "/";
-        deniedUrl.searchParams.set("error", "unauthorized_hq_access");
-        return NextResponse.redirect(deniedUrl);
-      }
-    } catch {
-      // Fail closed on error
+    const isAuthorized = await checkClearance();
+    if (!isAuthorized) {
+      // Fail closed: Redirect unauthorized user away from HQ
       const deniedUrl = request.nextUrl.clone();
       deniedUrl.pathname = "/";
+      deniedUrl.searchParams.set("error", "unauthorized_hq_access");
       return NextResponse.redirect(deniedUrl);
     }
   }

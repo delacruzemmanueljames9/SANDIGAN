@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const supabase = React.useMemo(() => getSupabaseBrowserClient(), []);
 
-  const loadUserProfile = React.useCallback(async (userId: string, userEmail?: string) => {
+  const loadUserProfile = React.useCallback(async (userId: string, userEmail?: string, appMetadata?: Record<string, unknown>) => {
     try {
       // 1. Fetch Profile
       const { data: profData } = await supabase
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
       }
 
-      // 2. Fetch User Role strictly from user_roles table
+      // 2. Fetch User Role strictly from user_roles table or verified app_metadata
       const { data: roleData } = await supabase
         .from("user_roles")
         .select("role")
@@ -71,10 +71,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       const validRoles: UserRole[] = ["user", "volunteer", "moderator", "counselor", "founder", "admin"];
+      const metaRole = appMetadata?.role as UserRole | undefined;
+
       if (roleData && roleData.role && validRoles.includes(roleData.role as UserRole)) {
         const verifiedRole = roleData.role as UserRole;
         setRole(verifiedRole);
         setProfile((prev) => (prev ? { ...prev, role: verifiedRole } : null));
+      } else if (metaRole && validRoles.includes(metaRole)) {
+        setRole(metaRole);
+        setProfile((prev) => (prev ? { ...prev, role: metaRole } : null));
       } else {
         setRole("user");
       }
@@ -93,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
           if (initialSession?.user) {
-            await loadUserProfile(initialSession.user.id, initialSession.user.email);
+            await loadUserProfile(initialSession.user.id, initialSession.user.email, initialSession.user.app_metadata);
           } else {
             setProfile(null);
             setRole(null);
@@ -112,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (newSession?.user) {
-        await loadUserProfile(newSession.user.id, newSession.user.email);
+        await loadUserProfile(newSession.user.id, newSession.user.email, newSession.user.app_metadata);
       } else {
         setProfile(null);
         setRole(null);

@@ -69,6 +69,17 @@ export function Header() {
 
         {/* Right Action Tools */}
         <div className="flex items-center gap-2">
+          {/* Discreet Founder HQ Button */}
+          <Link
+            href="/hq/login"
+            className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-500 hover:text-sandigan-navy-900 dark:text-slate-400 dark:hover:text-sandigan-gold hover:bg-slate-100 dark:hover:bg-sandigan-navy-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-sandigan-navy-700"
+            title="Founder HQ Command Center"
+            aria-label="Founder HQ"
+          >
+            <Shield className="w-3.5 h-3.5 text-sandigan-gold" />
+            <span className="font-semibold text-[11px] tracking-wide">Founder HQ</span>
+          </Link>
+
           <LanguageToggle />
           <ThemeToggle />
 
@@ -180,11 +191,22 @@ export function Header() {
                 </Link>
               )}
 
-              {user && (role === "founder" || role === "admin") && (
+              {user && (role === "founder" || role === "admin") ? (
                 <Link href="/hq" className="w-full">
                   <Button variant="outline" size="sm" className="w-full justify-center" leftIcon={<Shield className="w-4 h-4" />}>
                     Founder Command HQ
                   </Button>
+                </Link>
+              ) : (
+                <Link
+                  href="/hq/login"
+                  className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-sandigan-navy-800"
+                >
+                  <span className="flex items-center gap-2">
+                    <Shield className="w-3.5 h-3.5 text-sandigan-gold" />
+                    <span>Founder HQ</span>
+                  </span>
+                  <Badge variant="navy" className="text-[10px]">ADMIN</Badge>
                 </Link>
               )}
             </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { AI_OFFICERS } from "@/config/officers";
+import { verifyFounderOrAdmin } from "@/lib/auth/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,14 +18,8 @@ export async function GET() {
     }
 
     // Double check founder / admin authorization
-    const { data: roleRecord } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .in("role", ["founder", "admin"])
-      .maybeSingle();
-
-    if (!roleRecord) {
+    const isAuthorized = await verifyFounderOrAdmin(user, supabase);
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: "Forbidden: Founder access required" },
         { status: 403 }
